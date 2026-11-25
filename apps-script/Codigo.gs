@@ -14,8 +14,25 @@ var COLS = ['id', 'Fecha visita', 'Segmento', 'Canal', 'Cliente', 'Código', 'Ci
   'Competencia', 'Acuerdo', 'Brandeo', 'Marca foco', 'Relacionamiento', 'Reporte stock', 'Observaciones', 'Próxima acción',
   'Fotos', 'Cliente nuevo', 'Borrada', 'Actualizada', 'JSON'];
 
+var LIBRO = 'Mis Visitas'; // nombre de tu Google Sheet
+
+// Sirve tanto si el script está dentro del Sheet como si es un proyecto aparte:
+// busca el Sheet "Mis Visitas" en tu Drive (o lo crea) y recuerda su ID.
+function libro_() {
+  var act = SpreadsheetApp.getActiveSpreadsheet();
+  if (act) return act;
+  var props = PropertiesService.getScriptProperties();
+  var id = props.getProperty('SHEET_ID');
+  if (id) { try { return SpreadsheetApp.openById(id); } catch (x) {} }
+  var it = DriveApp.getFilesByType(MimeType.GOOGLE_SHEETS), ss = null;
+  while (it.hasNext()) { var f = it.next(); if (f.getName() === LIBRO && !f.isTrashed()) { ss = SpreadsheetApp.open(f); break; } }
+  if (!ss) ss = SpreadsheetApp.create(LIBRO);
+  props.setProperty('SHEET_ID', ss.getId());
+  return ss;
+}
+
 function hoja_() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ss = libro_();
   var sh = ss.getSheetByName(HOJA);
   if (!sh) { sh = ss.insertSheet(HOJA); sh.appendRow(COLS); sh.setFrozenRows(1); sh.hideColumns(COLS.length); }
   return sh;
@@ -78,6 +95,18 @@ function doGet(e) {
     return json_({ ok: true, visitas: vs });
   }
   return json_({ ok: true, app: 'Mis Visitas' });
+}
+
+// Carga tus visitas históricas desde el archivo "historico-visitas-2026.json" de tu Drive (sin duplicar).
+function importarHistorico() {
+  var it = DriveApp.getFilesByName('historico-visitas-2026.json');
+  if (!it.hasNext()) throw new Error('No encuentro historico-visitas-2026.json en tu Drive');
+  var data = JSON.parse(it.next().getBlob().getDataAsString('UTF-8'));
+  var vs = data.visitas || [];
+  for (var i = 0; i < vs.length; i += 100) {
+    doPost({ postData: { contents: JSON.stringify({ action: 'upsert', visitas: vs.slice(i, i + 100) }) } });
+  }
+  Logger.log('Importadas ' + vs.length + ' visitas en la hoja "' + HOJA + '" de "' + libro_().getName() + '".');
 }
 
 // Ejecuta esta función UNA vez desde el editor (botón ▶ Ejecutar) para dar permisos y crear la hoja y la carpeta.
