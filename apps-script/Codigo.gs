@@ -79,3 +79,9 @@ function doGet(e) {
   }
   return json_({ ok: true, app: 'Mis Visitas' });
 }
+
+// Ejecuta esta función UNA vez desde el editor (botón ▶ Ejecutar) para dar permisos y crear la hoja y la carpeta.
+function probar() {
+  hoja_(); carpeta_();
+  Logger.log('Todo listo: hoja "' + HOJA + '" y carpeta "' + CARPETA + '" creadas.');
+}
