@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mis Visitas</title>
+<meta name="theme-color" content="#7a1020">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header id="top">
+  <div class="brand">Mis Visitas</div>
+  <div id="syncBadge" class="badge" title="Estado de sincronización">…</div>
+</header>
+
+<main>
+  <!-- REGISTRAR -->
+  <section id="v-registrar" class="view active">
+    <div class="search-wrap">
+      <input id="q" type="search" placeholder="Buscar cliente o código (2-3 letras)" autocomplete="off">
+    </div>
+    <div class="chips" id="filtros">
+      <select id="fCiudad"></select>
+      <select id="fCanal"></select>
+      <select id="fPareto">
+        <option value="">Todos</option>
+        <option value="P">Pareto</option>
+        <option value="N">No Pareto</option>
+        <option value="T">Top Pareto (vol.)</option>
+      </select>
+    </div>
+    <div id="resultados" class="list"></div>
+    <button id="btnNuevo" class="btn ghost full">+ Cliente nuevo (no está en la base)</button>
+  </section>
+
+  <!-- FORMULARIO VISITA -->
+  <section id="v-visita" class="view">
+    <div class="card cliente-card" id="cliCard"></div>
+    <div id="nuevoBox" class="card hidden">
+      <label>Nombre del cliente nuevo<input id="nNombre" type="text"></label>
+      <div class="row2">
+        <label>Ciudad<select id="nCiudad"></select></label>
+        <label>Canal<select id="nCanal"></select></label>
+      </div>
+    </div>
+    <div class="row2">
+      <label>Fecha<input id="fFecha" type="date"></label>
+      <div>
+        <div class="lbl">Segmento</div>
+        <div class="seg" id="segBtns"><button data-v="ON">ON</button><button data-v="OFF">OFF</button></div>
+      </div>
+    </div>
+    <div id="prefillNote" class="note hidden"></div>
+
+    <h3>Ejecución</h3>
+    <div id="ejec" class="yn-grid"></div>
+
+    <h3>Precios mis marcas <small>(Bs)</small></h3>
+    <div id="precios" class="price-grid"></div>
+
+    <h3>Fotos <small>(hasta 3)</small></h3>
+    <div class="fotos">
+      <label class="btn ghost foto-btn">📷 Tomar foto<input id="fotoIn" type="file" accept="image/*" capture="environment" hidden></label>
+      <div id="fotoPrev" class="foto-prev"></div>
+    </div>
+
+    <h3>Competencia <small>(toca la marca y pon el precio)</small></h3>
+    <div id="compBtns" class="comp-btns"></div>
+    <div id="compList" class="price-grid"></div>
+    <div class="row2">
+      <input id="compOtra" type="text" placeholder="Otra marca">
+      <button id="compAdd" class="btn ghost">Agregar</button>
+    </div>
+
+    <details id="detalle">
+      <summary>Detalle completo (opcional)</summary>
+      <div id="detalleCampos"></div>
+    </details>
+
+    <div class="sticky-actions">
+      <button id="btnCancelar" class="btn ghost">Cancelar</button>
+      <button id="btnGuardar" class="btn primary">Guardar visita</button>
+    </div>
+  </section>
+
+  <!-- HISTORIAL -->
+  <section id="v-historial" class="view">
+    <div class="chips">
+      <input id="hMes" type="month">
+      <select id="hCiudad"></select>
+    </div>
+    <div id="hList" class="list"></div>
+  </section>
+
+  <!-- PANEL -->
+  <section id="v-panel" class="view">
+    <div class="chips">
+      <input id="pMes" type="month">
+      <select id="pCiudad"></select>
+    </div>
+    <div id="alertaViernes" class="card alerta hidden"></div>
+    <div id="kpis" class="kpi-grid"></div>
+    <div id="comision" class="card"></div>
+    <h3>Precios por semana</h3>
+    <div class="chips">
+      <select id="prVista">
+        <option value="buhero">OFF: Branca vs Buhero</option>
+        <option value="rones">OFF: Branca vs Rones</option>
+        <option value="casareal">OFF: Branca vs Casa Real Etiqueta Negra</option>
+        <option value="on">ON: todas las marcas</option>
+      </select>
+      <select id="prCanal"></select>
+    </div>
+    <div class="card"><div style="position:relative;height:280px"><canvas id="chart"></canvas></div><div id="prTabla"></div></div>
+    <button id="btnReporte" class="btn primary full">📄 Reporte mensual para RRHH</button>
+  </section>
+
+  <!-- AJUSTES -->
+  <section id="v-ajustes" class="view">
+    <div class="card">
+      <h3>Sincronización con Google Sheets</h3>
+      <label>Enlace de tu Apps Script (termina en /exec)<input id="cfgUrl" type="url" placeholder="https://script.google.com/macros/s/.../exec"></label>
+      <div class="row2">
+        <button id="btnSync" class="btn primary">Sincronizar ahora</button>
+        <button id="btnRestore" class="btn ghost">Recuperar desde Sheets</button>
+      </div>
+      <p class="note" id="syncInfo"></p>
+    </div>
+    <div class="card">
+      <h3>Metas del mes</h3>
+      <div class="price-grid" id="cfgMetas"></div>
+    </div>
+    <div class="card">
+      <h3>Comisión</h3>
+      <div class="price-grid" id="cfgCom"></div>
+      <p class="note">Comisión = Básico + Variable × Σ (peso × cumplimiento). Un KPI bajo el mínimo no paga; cada KPI se limita al tope.</p>
+    </div>
+    <div class="card">
+      <h3>Base de ventas</h3>
+      <p class="note" id="baseInfo"></p>
+      <label class="btn ghost full">Subir Export nuevo (.xlsx)<input id="baseIn" type="file" accept=".xlsx,.xls" hidden></label>
+    </div>
+    <div class="card">
+      <h3>Respaldo</h3>
+      <div class="row2">
+        <button id="btnBackup" class="btn ghost">Descargar respaldo</button>
+        <label class="btn ghost">Cargar respaldo<input id="backupIn" type="file" accept=".json" hidden></label>
+      </div>
+    </div>
+  </section>
+</main>
+
+<nav id="tabs">
+  <button data-v="registrar" class="on">➕<span>Registrar</span></button>
+  <button data-v="historial">🗂️<span>Historial</span></button>
+  <button data-v="panel">📊<span>Panel</span></button>
+  <button data-v="ajustes">⚙️<span>Ajustes</span></button>
+</nav>
+
+<div id="toast"></div>
+<div id="reporte" class="hidden"></div>
+
+<script src="vendor/chart.umd.min.js" defer></script>
+<script src="vendor/xlsx.full.min.js" defer></script>
+<script src="app.js" defer></script>
+</body>
+</html>
