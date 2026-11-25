@@ -113,6 +113,7 @@ async function init() {
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
   window.addEventListener('online', () => sincronizar());
   setInterval(() => sincronizar(true), 60000);
+  if (CFG.url && !VISITAS.length) recuperar(); // celular nuevo: trae todo de tu Sheet
   sincronizar(true);
 }
 
@@ -165,7 +166,7 @@ function bindUI() {
   ['#pMes', '#pCiudad', '#prVista', '#prCanal'].forEach((s) => $(s).addEventListener('input', renderPanel));
   $('#btnSync').onclick = () => sincronizar(false);
   $('#btnRestore').onclick = recuperar;
-  $('#cfgUrl').onchange = async () => { CFG.url = $('#cfgUrl').value.trim(); await guardarCfg(); sincronizar(false); };
+  $('#cfgUrl').onchange = async () => { CFG.url = $('#cfgUrl').value.trim(); await guardarCfg(); if (!VISITAS.length) await recuperar(); sincronizar(false); };
   $('#baseIn').onchange = subirBase;
   $('#btnBackup').onclick = descargarRespaldo;
   $('#backupIn').onchange = cargarRespaldo;
@@ -329,7 +330,8 @@ async function guardarVisita() {
 async function renderHistorial() {
   const mes = $('#hMes').value, ciu = $('#hCiudad').value;
   const l = VISITAS.filter((v) => !v.deleted && (!mes || v.fecha.startsWith(mes)) && (!ciu || ciudadDe(v) === ciu)).sort((a, b) => (b.fecha.localeCompare(a.fecha)) || (b.createdAt - a.createdAt));
-  $('#hList').innerHTML = `<p class="note">${l.length} visitas</p>` + l.map((v) => { const p = paretoDe(v);
+  const total = VISITAS.filter((v) => !v.deleted).length;
+  $('#hList').innerHTML = `<p class="note">${l.length} visitas en ${mes ? fmtF(mes + '-01').slice(3) : 'todos los meses'} · ${total} en total en el teléfono${total && !l.length ? ' (cambia el mes arriba o bórralo para ver todas)' : ''}${!total ? ' · Si ya tienes visitas en tu Sheet, ve a ⚙️ Ajustes y toca "Recuperar desde Sheets"' : ''}</p>` + l.map((v) => { const p = paretoDe(v);
     return `<div class="item" data-id="${v.id}"><b>${esc(v.cliente)}</b><div class="meta">${fmtF(v.fecha)} · ${v.seg} · ${esc(canalDe(v))} · ${esc(ciudadDe(v))}</div>
       <span class="tag ${p.es ? 'p' : ''}">${p.es ? `Pareto #${p.pos}` : 'No Pareto'}</span><span class="tag ${v.synced ? 'ok' : 'warn'}">${v.synced ? 'Sincronizada' : 'Pendiente'}</span>
       <div class="row2"><button class="btn ghost" data-a="edit">Editar</button><button class="btn ghost" data-a="del">Borrar</button></div></div>`; }).join('');
@@ -549,7 +551,7 @@ async function recuperar() {
   try {
     const j = await (await fetch(CFG.url + '?action=list')).json(); let n = 0;
     for (const v of j.visitas || []) { const loc = await dbGet('visitas', v.id); if (!loc || (v.updatedAt || 0) > (loc.updatedAt || 0)) { v.synced = true; await dbPut('visitas', v); n++; } }
-    VISITAS = await dbAll('visitas'); renderSync(); toast(`Recuperadas ${n} visitas desde Sheets`);
+    VISITAS = await dbAll('visitas'); renderSync(); renderBusqueda(); toast(`Recuperadas ${n} visitas desde Sheets`);
   } catch (e) { toast('No se pudo recuperar: ' + e.message); }
 }
 

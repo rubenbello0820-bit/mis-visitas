@@ -1,5 +1,5 @@
 // Service worker: guarda la app en el teléfono para que abra sin señal.
-const CACHE = 'misvisitas-v2';
+const CACHE = 'misvisitas-v3';
 const ARCHIVOS = ['./', 'index.html', 'style.css', 'app.js', 'manifest.json', 'icon.svg', 'icon-192.png', 'icon-512.png',
   'vendor/chart.umd.min.js', 'vendor/xlsx.full.min.js'];
 self.addEventListener('install', (e) => { e.waitUntil(caches.open(CACHE).then((c) => c.addAll(ARCHIVOS)).then(() => self.skipWaiting())); });
